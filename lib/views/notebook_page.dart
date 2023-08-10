@@ -38,7 +38,10 @@ class _NotebookPageState extends State<NotebookPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Image.file(imageFile),
+                  Container(
+                    height: 150.0, // or any other height that fits your needs
+                    child: Image.file(imageFile, fit: BoxFit.cover),
+                  ),
                   TextField(
                     controller: _noteController,
                     decoration: const InputDecoration(labelText: 'Note'),
