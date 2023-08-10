@@ -24,6 +24,7 @@ class _NotebookPageState extends State<NotebookPage> {
   void _addNote() {
     // Logic to add a new note with photo.
     final picker = ImagePicker();
+    final _noteController = TextEditingController();
 
     picker.pickImage(source: ImageSource.camera).then((pickedImage) {
       if (pickedImage != null) {
@@ -38,9 +39,10 @@ class _NotebookPageState extends State<NotebookPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Image.file(imageFile),
-                  const TextField(
-                    decoration: InputDecoration(labelText: 'Note'),
-                  ),
+                  TextField(
+                    controller: _noteController,
+                    decoration: const InputDecoration(labelText: 'Note'),
+                  )
                 ],
               ),
               actions: <Widget>[
@@ -55,7 +57,7 @@ class _NotebookPageState extends State<NotebookPage> {
                   onPressed: () {
                     setState(() {
                       notes.add({
-                        'text': 'New note',
+                        'text': _noteController.text,
                         'imageUrl': imageFile.path,
                       });
                     });
@@ -67,7 +69,20 @@ class _NotebookPageState extends State<NotebookPage> {
           },
         );
       } else {
-        print('No image was picked.');
+        // alert user that no image was picked
+
+        AlertDialog(
+          title: const Text('No image picked'),
+          content: const Text('Please try again'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
       }
     });
   }
@@ -81,13 +96,17 @@ class _NotebookPageState extends State<NotebookPage> {
       body: ListView.builder(
         itemCount: notes.length,
         itemBuilder: (context, index) {
+          Widget imageWidget;
+          if (notes[index]['imageUrl']!.startsWith('http')) {
+            imageWidget = Image.network(notes[index]['imageUrl']!);
+          } else {
+            imageWidget = Image.file(File(notes[index]['imageUrl']!));
+          }
+
           return ListTile(
-            leading: Image.network(notes[index]['imageUrl']!),
+            leading: imageWidget,
             title: Text(notes[index]['text']!),
-            onTap: () {
-              // Logic for when a note is tapped.
-              // This could open the note in a detailed view.
-            },
+            onTap: () {},
           );
         },
       ),
