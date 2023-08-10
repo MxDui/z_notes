@@ -1,8 +1,10 @@
-// routes.dart
-import 'package:flutter/material.dart';
-import 'views/home_page.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:z_notes/views/notebook_page.dart';
+
+import 'views/dashboard_page.dart';
 
 final Map<String, WidgetBuilder> routes = {
-  '/': (context) => const PhotoNoteHomePage(title: 'PhotoNote'),
-  // Add other routes as needed, e.g., '/details': (context) => DetailsPage(),
+  '/': (context) => const DashboardPage(),
+  '/notebook': (context) => const NotebookPage(
+      title: 'Sample Notebook', description: 'Sample Description'),
 };
