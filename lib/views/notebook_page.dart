@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class NotebookPage extends StatefulWidget {
   final String title;
@@ -20,8 +23,53 @@ class _NotebookPageState extends State<NotebookPage> {
 
   void _addNote() {
     // Logic to add a new note with photo.
-    // This could open a new page or a modal to let the user input note text
-    // and select/capture a photo.
+    final picker = ImagePicker();
+
+    picker.pickImage(source: ImageSource.camera).then((pickedImage) {
+      if (pickedImage != null) {
+        final imageFile = File(pickedImage.path);
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Add a new note'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Image.file(imageFile),
+                  const TextField(
+                    decoration: InputDecoration(labelText: 'Note'),
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Save'),
+                  onPressed: () {
+                    setState(() {
+                      notes.add({
+                        'text': 'New note',
+                        'imageUrl': imageFile.path,
+                      });
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        print('No image was picked.');
+      }
+    });
   }
 
   @override
