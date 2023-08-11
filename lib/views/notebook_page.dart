@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:z_notes/db/helper.dart';
+import 'package:z_notes/utils/file_operations.dart';
 
 class NotebookPage extends StatefulWidget {
   final String title;
@@ -16,78 +18,93 @@ class NotebookPage extends StatefulWidget {
 
 class _NotebookPageState extends State<NotebookPage> {
   // Mock data representing notes in the notebook
-  List<Map<String, String>> notes = [
-    {'text': 'First note', 'imageUrl': 'https://via.placeholder.com/150'},
-    {'text': 'Second note', 'imageUrl': 'https://via.placeholder.com/150'},
-  ];
+  List<Map<String, dynamic>> notes = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadNotesFromDatabase();
+  }
 
-  void _addNote() {
-    // Logic to add a new note with photo.
+  Future<void> _loadNotesFromDatabase() async {
+    var dbNotes = await DatabaseHelper.instance.queryAllRows();
+    setState(() {
+      notes = dbNotes;
+    });
+  }
+
+  void _addNote() async {
     final picker = ImagePicker();
     final _noteController = TextEditingController();
 
-    picker.pickImage(source: ImageSource.camera).then((pickedImage) {
-      if (pickedImage != null) {
-        final imageFile = File(pickedImage.path);
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
 
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Add a new note'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Container(
-                    height: 150.0, // or any other height that fits your needs
-                    child: Image.file(imageFile, fit: BoxFit.cover),
-                  ),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(labelText: 'Note'),
-                  )
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+    if (pickedImage != null) {
+      final imagePath =
+          await FileOperations.saveImagePermanently(pickedImage.path);
+
+      // Temporary variable to store the decision of the user (whether to save or cancel)
+      bool? shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Add a new note'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  height: 150.0,
+                  child: Image.file(File(imagePath), fit: BoxFit.cover),
                 ),
-                TextButton(
-                  child: const Text('Save'),
-                  onPressed: () {
-                    setState(() {
-                      notes.add({
-                        'text': _noteController.text,
-                        'imageUrl': imageFile.path,
-                      });
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
+                TextField(
+                  controller: _noteController,
+                  decoration: const InputDecoration(labelText: 'Note'),
+                )
               ],
-            );
-          },
-        );
-      } else {
-        // alert user that no image was picked
-
-        AlertDialog(
-          title: const Text('No image picked'),
-          content: const Text('Please try again'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
             ),
-          ],
-        );
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+              ),
+              TextButton(
+                child: const Text('Save'),
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldSave == true) {
+        await DatabaseHelper.instance.insert({
+          'text': _noteController.text,
+          'imageUrl': imagePath,
+        });
+        await _loadNotesFromDatabase();
       }
-    });
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('No image picked'),
+            content: const Text('Please try again'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   @override
