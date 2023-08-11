@@ -1,22 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:z_notes/db/helper.dart';
 import 'package:z_notes/views/notebook_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
 
   @override
-  _DashboardPageState createState() => _DashboardPageState();
+  State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  List<Map<String, String>> notebooks = [
-    {'title': 'Travel Notes', 'description': 'Notes from my travels'},
-    {'title': 'Recipe Ideas', 'description': 'New recipes to try'},
-    {'title': 'Workshop Notes', 'description': 'Notes from workshops'},
-  ];
+  late List<Map<String, String>> notebooks;
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotebooksFromDatabase();
+  }
+
+  Future<void> _loadNotebooksFromDatabase() async {
+    List<Map<String, dynamic>> queryResults =
+        await DatabaseHelper.instance.queryAllNotebooks();
+
+    setState(() {
+      notebooks = queryResults.map((e) {
+        return {
+          'title': e[DatabaseHelper.notebookTitle] as String,
+          'description': e[DatabaseHelper.notebookDescription] as String,
+        };
+      }).toList();
+    });
+  }
 
   void _addNotebook() {
     showDialog(

@@ -26,7 +26,8 @@ class _NotebookPageState extends State<NotebookPage> {
   }
 
   Future<void> _loadNotesFromDatabase() async {
-    var dbNotes = await DatabaseHelper.instance.queryAllRows();
+    var dbNotes =
+        await DatabaseHelper.instance.queryNotesByNotebookName(widget.title);
     setState(() {
       notes = dbNotes;
     });
@@ -80,7 +81,7 @@ class _NotebookPageState extends State<NotebookPage> {
       );
 
       if (shouldSave == true) {
-        await DatabaseHelper.instance.insert({
+        await DatabaseHelper.instance.insertNote({
           'text': _noteController.text,
           'imageUrl': imagePath,
         });
